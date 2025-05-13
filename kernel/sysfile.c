@@ -19,7 +19,7 @@
 
 extern void sys_exit(void);
 
-static uint64 (*syscall[])(void) =
+static uint64 (*syscalls[])(void) =
 {
   [SYS_exit] sys_exit,
 };
