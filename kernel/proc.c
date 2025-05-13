@@ -16,6 +16,11 @@ rand_r(uint32 *seed)
   return *seed;
 }
 
+struct ptable {
+  struct spinlock lock; // protects the process table
+  struct proc *proc[NPROC]; // process table
+};
+
 struct proc *ptable;
 
 struct cpu cpus[NCPU];
@@ -488,7 +493,7 @@ scheduler(void)
 
     acquire(&ptable->lock);
     struct proc *p;
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
       if(p->state == RUNNABLE){
         class_total[p->sched_class] += p->tickets;
         grand_total += p->tickets;
