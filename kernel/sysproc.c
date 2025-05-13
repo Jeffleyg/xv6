@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "syscall.h"
 
 uint64
 sys_exit(void)
@@ -18,8 +19,7 @@ uint64
 sys_setpriority(void)
 {
   int class;
-  if(argint(0, &class) < 0)
-    return -1;
+  argint(0, &class);
   if(class < 0 || class >= PRIORITY_CLASSES)
     return -1;
 
@@ -45,8 +45,7 @@ uint64
 sys_fork(void)
 {
   int x;
-  if(argint(0, &x) < 0)
-    return -1;
+  argint(0, &x);
   return fork();
 }
 
