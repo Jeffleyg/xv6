@@ -9,6 +9,9 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+int  random(void);
+void srandom(unsigned int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

@@ -446,52 +446,51 @@ wait(uint64 addr)
 //    via swtch back to the scheduler.
 void scheduler(void)
 {
-  struct proc *p;
-  struct cpu *c = mycpu();
+    struct proc *p;
+    struct cpu *c = mycpu();
 
-  c->proc = 0;
-  for(;;){
-    // Desabilita interrupções para evitar condição de corrida
-    intr_off();
+    c->proc = 0;
+    for(;;) {
+        // Disable interrupts to avoid race condition
+        intr_off();
+        
+        // Implement lottery scheduling
+        int winning_ticket = random() % TOTAL_TICKETS;
+        int current_ticket = 0;
+        struct proc *selected = 0;
 
-    // Implementação do escalonamento por loteria
-    int winning_ticket = random() % TOTAL_TICKETS;
-    int current_ticket = 0;
-    struct proc *selected = 0;
-
-    // Primeira passada: seleciona a classe de prioridade
-    for(p = proc; p < &proc[NPROC]; p++) {
-      if(p->state != RUNNABLE)
-        continue;
-
-      if(current_ticket <= winning_ticket && winning_ticket < current_ticket + p->tickets) {
-        selected = p;
-        break;
-      }
-      current_ticket += p->tickets;
-    }
-
-    // Segunda passada: round-robin dentro da classe selecionada
-    if(selected == 0) {
-      for(p = proc; p < &proc[NPROC]; p++) {
-        if(p->state == RUNNABLE && p->priority_class == selected->priority_class) {
-          selected = p;
-          break;
+        // First pass: select winning ticket
+        for(p = proc; p < &proc[NPROC]; p++) {
+            if(p->state != RUNNABLE)
+                continue;
+                
+            if(current_ticket <= winning_ticket && 
+               winning_ticket < current_ticket + p->tickets) {
+                selected = p;
+                break;
+            }
+            current_ticket += p->tickets;
         }
-      }
-    }
 
-    if(selected != 0){
-      // Processo encontrado, executa
-      selected->state = RUNNING;
-      c->proc = selected;
-      swtch(&c->context, &selected->context);
-      c->proc = 0;
-    }
+        // Second pass: round-robin within selected class
+        if(selected == 0) {
+            for(p = proc; p < &proc[NPROC]; p++) {
+                if(p->state == RUNNABLE) {
+                    selected = p;
+                    break;
+                }
+            }
+        }
 
-    // Reabilita interrupções
-    intr_on();
-  }
+        if(selected != 0) {
+            selected->state = RUNNING;
+            c->proc = selected;
+            swtch(&c->context, &selected->context);
+            c->proc = 0;
+        }
+
+        intr_on();
+    }
 }
 
 // Switch to scheduler.  Must hold only p->lock
