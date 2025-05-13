@@ -1,7 +1,4 @@
-
 struct stat;
-
-int main(){ setpriority(0); ... }
 
 // system calls
 int fork(void);

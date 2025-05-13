@@ -5,50 +5,13 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-
-static struct {
-  struct spinlock lock;
-  struct proc *head[NCLASSES];
-  struct proc *tail[NCLASSES];
-} pqueues;
-
-static void
-enqueue(struct proc *p)
+static uint32
+rand_r(uint32 *seed)
 {
-  int c = p->pclass;
-  if(!pqueues.head[c])
-    pqueues.head[c] = p;
-  else
-    pqueues.tail[c]->next = p;
-  pqueues.tail[c] = p;
-  p->next = 0;
-}
-
-static struct proc*
-dequeue_rr(int c)
-{
-  struct proc *p = pqueues.head[c];
-  if(!p) return 0;
-  pqueues.head[c] = p->next;
-  if(!pqueues.head[c]) pqueues.tail[c] = 0;
-  return p;
-}
-
-static int pick_class(void)
-{
-  int total = 0;
-  for(int i=0;i<NCLASSES;i++)
-    if(pqueues.head[i]) total += class_tickets[i];
-
-  if(total == 0) return -1;
-
-  int r = rand() % total;
-  for(int i=0;i<NCLASSES;i++){
-    if(!pqueues.head[i]) continue;
-    if(r < class_tickets[i]) return i;
-    r -= class_tickets[i];
-  }
-  return -1; // nunca cai aqui
+  *seed ^= *seed << 13;
+  *seed ^= *seed >> 17;
+  *seed ^= *seed << 5;
+  return *seed;
 }
 
 struct cpu cpus[NCPU];
@@ -138,7 +101,7 @@ int
 allocpid()
 {
   int pid;
-
+  
   acquire(&pid_lock);
   pid = nextpid;
   nextpid = nextpid + 1;
@@ -322,7 +285,7 @@ growproc(int n)
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int
-fork(void)
+fork(int x)
 {
   int i, pid;
   struct proc *np;
@@ -486,69 +449,55 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-// void
-// scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-
-//   c->proc = 0;
-//   for(;;){
-//     // The most recent process to run may have had interrupts
-//     // turned off; enable them to avoid a deadlock if all
-//     // processes are waiting.
-//     intr_on();
-
-//     int found = 0;
-//     for(p = proc; p < &proc[NPROC]; p++) {
-//       acquire(&p->lock);
-//       if(p->state == RUNNABLE) {
-//         // Switch to chosen process.  It is the process's job
-//         // to release its lock and then reacquire it
-//         // before jumping back to us.
-//         p->state = RUNNING;
-//         c->proc = p;
-//         swtch(&c->context, &p->context);
-
-//         // Process is done running for now.
-//         // It should have changed its p->state before coming back.
-//         c->proc = 0;
-//         found = 1;
-//       }
-//       release(&p->lock);
-//     }
-//     if(found == 0) {
-//       // nothing to run; stop running on this core until an interrupt.
-//       intr_on();
-//       asm volatile("wfi");
-//     }
-//   }
-// }
-
 void
 scheduler(void)
 {
   struct cpu *c = mycpu();
+  c->proc = 0;
+
+  uint32 seed = 1234567 + cpuid();   // semente diferente por CPU
+
   for(;;){
     intr_on();
-    acquire(&pqueues.lock);
 
-    int cls = pick_class();
-    if(cls >= 0){
-      struct proc *p = dequeue_rr(cls);
-      if(p){
-        c->proc = p;
-        p->state = RUNNING;
-        swtch(&c->context, &p->context);
-        // após retorno
-        c->proc = 0;
-        if(p->state == RUNNABLE)
-          enqueue(p);              // volta ao fim da fila da própria classe
+    // 1.  Loteria entre classes -----------------------------
+    int class_total[NCLASSES] = {0};
+    int grand_total = 0;
+
+    acquire(&ptable.lock);
+    struct proc *p;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE){
+        class_total[p->sched_class] += p->tickets;
+        grand_total += p->tickets;
       }
     }
-    release(&pqueues.lock);
+
+    if(grand_total == 0){
+      release(&ptable.lock);
+      continue;
+    }
+
+    uint32 winning = rand_r(&seed) % grand_total;
+    int chosen_cls = -1;
+    for(int cls = 0, acc = 0; cls < NCLASSES; cls++){
+      acc += class_total[cls];
+      if(winning < acc){ chosen_cls = cls; break; }
+    }
+
+    // 2.  Round-robin dentro da classe vencedora ------------
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->sched_class == chosen_cls){
+        // contexto de troca
+        c->proc = p;
+        swtch(&c->context, &p->context);
+        c->proc = 0;
+      }
+    }
+    release(&ptable.lock);
   }
 }
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores

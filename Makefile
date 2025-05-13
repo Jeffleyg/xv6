@@ -9,7 +9,6 @@ OBJS = \
   $K/uart.o \
   $K/kalloc.o \
   $K/spinlock.o \
-  $K/rand.o \
   $K/string.o \
   $K/main.o \
   $K/vm.o \
@@ -30,7 +29,6 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $K/virtio_disk.o
-  
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -141,8 +139,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_prioritytest \
-	# $U/_scheduler_test\
+	$U/_lottest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -182,4 +179,3 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
-RAND = rand.o
