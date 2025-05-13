@@ -5,7 +5,12 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#define NPROC 64
 
+struct proc {
+  int pid;                     // Process ID
+  int state;                   // Process state
+}
 #define CLS3 3;
 static uint32
 rand_r(uint32 *seed)
