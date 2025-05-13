@@ -45,6 +45,10 @@ proc_mapstacks(pagetable_t kpgtbl)
   }
 }
 
+struct proc {
+  struct trapframe *tf; // data page for trampoline.S
+}
+
 // initialize the proc table.
 void
 procinit(void)
