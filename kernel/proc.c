@@ -5,6 +5,8 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+
+#define CLS3 3;
 static uint32
 rand_r(uint32 *seed)
 {
@@ -13,6 +15,8 @@ rand_r(uint32 *seed)
   *seed ^= *seed << 5;
   return *seed;
 }
+
+struct proc *ptable;
 
 struct cpu cpus[NCPU];
 
@@ -287,6 +291,8 @@ growproc(int n)
 int
 fork(void)
 {
+  int x = 0;
+
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
