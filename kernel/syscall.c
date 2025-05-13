@@ -7,6 +7,8 @@
 #include "syscall.h"
 #include "defs.h"
 
+extern uint64 sys_exit(void);
+
 static uint64 (*syscalls[])(void) =
 {
   [SYS_exit] sys_exit,
