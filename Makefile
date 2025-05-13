@@ -9,6 +9,7 @@ OBJS = \
   $K/uart.o \
   $K/kalloc.o \
   $K/spinlock.o \
+  $K/rand.o
   $K/string.o \
   $K/main.o \
   $K/vm.o \
@@ -29,6 +30,7 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $K/virtio_disk.o
+  
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
