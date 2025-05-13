@@ -9,14 +9,14 @@
 
 extern uint64 sys_exit(void);
 
-uint64
-sys_exit(void)
-{
-  int n;
-  argint(0, &n);
-  exit(n);
-  return 0;  // not reached
-}
+// uint64
+// sys_exit(void)
+// {
+//   int n;
+//   argint(0, &n);
+//   exit(n);
+//   return 0;  // not reached
+// }
 uint64
 sys_setpriority(void)
 {

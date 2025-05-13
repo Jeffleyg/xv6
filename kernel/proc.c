@@ -537,9 +537,12 @@ sys_exit(void)
   int status;
 
   argint(0, &status);
-  return -1;
+  if(status < 0){
+    return -1;
+  }
+
   exit(status);
-  return 0; // Add return to avoid warning
+  //return 0; // Add return to avoid warning
 }
 
 // A fork child's very first scheduling by scheduler()
