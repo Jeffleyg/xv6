@@ -5,13 +5,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#define NPROC 64
-
-struct proc {
-  int pid;                     // Process ID
-  int state;                   // Process state
-}
-#define CLS3 3;
 static uint32
 rand_r(uint32 *seed)
 {
@@ -20,13 +13,6 @@ rand_r(uint32 *seed)
   *seed ^= *seed << 5;
   return *seed;
 }
-
-struct ptable {
-  struct spinlock lock; // protects the process table
-  struct proc *proc[NPROC]; // process table
-};
-
-struct proc *ptable;
 
 struct cpu cpus[NCPU];
 
@@ -168,6 +154,9 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  p->priority_class = 3; // padrão: mais baixa prioridade
+  p->tickets = CLASS3_TICKETS;
+
   return p;
 }
 
@@ -299,19 +288,18 @@ growproc(int n)
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int
-fork(void)
+fork(int x)
 {
-  int x = 0;
-
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
 
-  // Aloca o PCB
-  if((np = allocproc()) == 0)
+  // Allocate process.
+  if((np = allocproc()) == 0){
     return -1;
+  }
 
-  // Copia a memória de usuário
+  // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
@@ -319,11 +307,13 @@ fork(void)
   }
   np->sz = p->sz;
 
-  // Copia os registradores e configura o retorno para 0 no filho
+  // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
+
+  // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
-  // Duplicação de arquivos e diretório
+  // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
@@ -333,37 +323,18 @@ fork(void)
 
   pid = np->pid;
 
-  // ---- NOVO BLOCO: classe e tickets ---------------------------------
-  if(x < 0) x = 0;  // Garantir que o valor de x não seja negativo
-
-  if(x < NCLASSES) {  // 0..3 → classes fixas
-    np->sched_class = x;
-    const int class_tk[4] = {
-      CLS0_TICKETS, CLS1_TICKETS,
-      CLS2_TICKETS, CLS3_TICKETS
-    };
-    np->tickets = class_tk[x];
-  } else {  // x ≥ 4 → escalonamento de loteria “puro”
-    np->sched_class = CLS3;  // Coloca na classe de menor prioridade
-    np->tickets     = x;     // Usa número de tickets fornecido
-  }
-  // -------------------------------------------------------------------
-
   release(&np->lock);
 
-  // Configura o processo filho para esperar no pai
   acquire(&wait_lock);
   np->parent = p;
   release(&wait_lock);
 
-  // Torna o processo filho pronto para execução
   acquire(&np->lock);
   np->state = RUNNABLE;
   release(&np->lock);
 
-  return pid;  // Retorna o PID do filho para o pai
+  return pid;
 }
-
 
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
@@ -481,52 +452,53 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void
-scheduler(void)
+void scheduler(void)
 {
+  struct proc *p;
   struct cpu *c = mycpu();
+  
   c->proc = 0;
-
-  uint32 seed = 1234567 + cpuid();   // semente diferente por CPU
-
   for(;;){
+    // Desabilita interrupções para evitar condição de corrida
+    intr_off();
+    
+    // Implementação do escalonamento por loteria
+    int winning_ticket = random() % TOTAL_TICKETS;
+    int current_ticket = 0;
+    struct proc *selected = 0;
+    
+    // Primeira passada: seleciona a classe de prioridade
+    for(p = proc; p < &proc[NPROC]; p++) {
+      if(p->state != RUNNABLE)
+        continue;
+        
+      if(current_ticket <= winning_ticket && winning_ticket < current_ticket + p->tickets) {
+        selected = p;
+        break;
+      }
+      current_ticket += p->tickets;
+    }
+
+    // Segunda passada: round-robin dentro da classe selecionada
+    if(selected == 0) {
+      for(p = proc; p < &proc[NPROC]; p++) {
+        if(p->state == RUNNABLE && p->priority_class == selected->priority_class) {
+          selected = p;
+          break;
+        }
+      }
+    }
+
+    if(selected != 0){
+      // Processo encontrado, executa
+      selected->state = RUNNING;
+      c->proc = selected;
+      swtch(&c->context, &selected->context);
+      c->proc = 0;
+    }
+
+    // Reabilita interrupções
     intr_on();
-
-    // 1.  Loteria entre classes -----------------------------
-    int class_total[NCLASSES] = {0};
-    int grand_total = 0;
-
-    acquire(&ptable->lock);
-    struct proc *p;
-    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
-      if(p->state == RUNNABLE){
-        class_total[p->sched_class] += p->tickets;
-        grand_total += p->tickets;
-      }
-    }
-
-    if(grand_total == 0){
-      release(&ptable->lock);
-      continue;
-    }
-
-    uint32 winning = rand_r(&seed) % grand_total;
-    int chosen_cls = -1;
-    for(int cls = 0, acc = 0; cls < NCLASSES; cls++){
-      acc += class_total[cls];
-      if(winning < acc){ chosen_cls = cls; break; }
-    }
-
-    // 2.  Round-robin dentro da classe vencedora ------------
-    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
-      if(p->state == RUNNABLE && p->sched_class == chosen_cls){
-        // contexto de troca
-        c->proc = p;
-        swtch(&c->context, &p->context);
-        c->proc = 0;
-      }
-    }
-    release(&ptable->lock);
   }
 }
 
