@@ -486,9 +486,9 @@ scheduler(void)
     int class_total[NCLASSES] = {0};
     int grand_total = 0;
 
-    acquire(&ptable.lock);
+    acquire(&ptable->lock);
     struct proc *p;
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
       if(p->state == RUNNABLE){
         class_total[p->sched_class] += p->tickets;
         grand_total += p->tickets;
@@ -496,7 +496,7 @@ scheduler(void)
     }
 
     if(grand_total == 0){
-      release(&ptable.lock);
+      release(&ptable->lock);
       continue;
     }
 
@@ -516,7 +516,7 @@ scheduler(void)
         c->proc = 0;
       }
     }
-    release(&ptable.lock);
+    release(&ptable->lock);
   }
 }
 
