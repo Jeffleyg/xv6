@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+extern void randinit(uint);
 
 volatile static int started = 0;
 
@@ -39,7 +40,8 @@ main()
     kvminithart();    // turn on paging
     trapinithart();   // install kernel trap vector
     plicinithart();   // ask PLIC for device interrupts
+    randinit(1234 + cpuid());
   }
 
-  scheduler();        
+  scheduler();
 }

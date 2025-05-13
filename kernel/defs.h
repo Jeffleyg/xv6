@@ -9,6 +9,9 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+void  randinit(uint seed);
+uint  rand(void);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -81,11 +84,10 @@ int            printf(char*, ...) __attribute__ ((format (printf, 1, 2)));
 void            panic(char*) __attribute__((noreturn));
 void            printfinit(void);
 
-void            context_switch(struct context *old, struct context *new);
 // proc.c
 int             cpuid(void);
 void            exit(int);
-int             fork_with_tickets(int tickets);
+int             fork(void);
 int             growproc(int);
 void            proc_mapstacks(pagetable_t);
 pagetable_t     proc_pagetable(struct proc *);

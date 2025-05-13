@@ -1,4 +1,8 @@
 // Saved registers for kernel context switches.
+
+#define NCLASSES 4
+static const int class_tickets[NCLASSES] = {6, 3, 2, 1}; // Number of tickets for each class
+
 struct context {
   uint64 ra;
   uint64 sp;
@@ -91,9 +95,8 @@ struct proc {
   int killed;                  // If non-zero, have been killed
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
-  //modificação
-  int tickets;                 // Number of tickets for the process
-  int priority_class;               // Process priority
+  int pclass;
+  struct proc *next;          // Next process in the list
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process

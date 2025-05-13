@@ -5,6 +5,17 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+// #include "user.h"
+
+uint64
+sys_setpriority(void)
+{
+  int cls;
+  argint(0, &cls);
+  if(cls < 0 || cls > 3) return -1;
+  myproc()->pclass = cls;
+  return 0;
+}
 
 uint64
 sys_exit(void)
@@ -24,8 +35,6 @@ sys_getpid(void)
 uint64
 sys_fork(void)
 {
-  int tickets;
-  argint(0, &tickets); // lê o número de tickets do argumento
   return fork();
 }
 
