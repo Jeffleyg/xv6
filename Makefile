@@ -9,7 +9,7 @@ OBJS = \
   $K/uart.o \
   $K/kalloc.o \
   $K/spinlock.o \
-  $K/rand.o
+  $K/rand.o \
   $K/string.o \
   $K/main.o \
   $K/vm.o \
