@@ -5,12 +5,15 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "stdlib.h"
 
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
 struct proc *initproc;
+
+struct proc *c;
 
 int nextpid = 1;
 struct spinlock pid_lock;
@@ -698,6 +701,7 @@ procdump(void)
   // Print the current process
   void scheduler() {
     int total_tickets = 0;
+    //int random(void)
 
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
       if (p->state == RUNNABLE) {
@@ -711,7 +715,7 @@ procdump(void)
         cumulative += p->tickets;
         if (winner < cumulative){
           p -> state = RUNNING;
-          switch(&c->context, &p->context);
+          context_switch(&c->context, &p->context);
           break;
         }
       }
