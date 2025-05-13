@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "syscall.h"
 
+extern struct proc *proc;
 extern uint64 sys_exit(void);
 
 int argint(int n, int *ip){
