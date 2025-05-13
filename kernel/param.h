@@ -13,8 +13,3 @@
 #define MAXPATH      128   // maximum file path name
 #define USERSTACK    1     // user stack pages
 
-#define CLS0_TICKETS 6   // prioridade 0  (mais alta)
-#define CLS1_TICKETS 3   // prioridade 1
-#define CLS2_TICKETS 2   // prioridade 2
-#define CLS3_TICKETS 1   // prioridade 3  (mais baixa)
-#define NCLASSES     4

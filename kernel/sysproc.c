@@ -24,9 +24,6 @@ sys_getpid(void)
 uint64
 sys_fork(void)
 {
-  int x;
-  if(argint(0, &x) < 0)
-    return -1;
   return fork();
 }
 

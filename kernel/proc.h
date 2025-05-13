@@ -1,5 +1,3 @@
-// Saved registers for kernel context switches.
-
 #define PRIORITY_CLASSES 4
 #define CLASS0_TICKETS 6
 #define CLASS1_TICKETS 3
@@ -7,6 +5,7 @@
 #define CLASS3_TICKETS 1
 #define TOTAL_TICKETS (CLASS0_TICKETS + CLASS1_TICKETS + CLASS2_TICKETS + CLASS3_TICKETS)
 
+// Saved registers for kernel context switches.
 struct context {
   uint64 ra;
   uint64 sp;
@@ -100,9 +99,6 @@ struct proc {
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
 
-  int  priority_class;   // 0‥3  (classe de prioridade)
-  int  tickets;       // # de bilhetes desse proc  (redundante p/ clareza)
-
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
 
@@ -115,4 +111,6 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int priority_class;  // 0 (mais alta) a 3 (mais baixa)
+  int tickets;        // bilhetes atribuídos ao processo
 };

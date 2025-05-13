@@ -5,14 +5,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-static uint32
-rand_r(uint32 *seed)
-{
-  *seed ^= *seed << 13;
-  *seed ^= *seed >> 17;
-  *seed ^= *seed << 5;
-  return *seed;
-}
 
 struct cpu cpus[NCPU];
 
@@ -41,7 +33,7 @@ void
 proc_mapstacks(pagetable_t kpgtbl)
 {
   struct proc *p;
-
+  
   for(p = proc; p < &proc[NPROC]; p++) {
     char *pa = kalloc();
     if(pa == 0)
@@ -288,7 +280,7 @@ growproc(int n)
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int
-fork(int x)
+fork(void)
 {
   int i, pid;
   struct proc *np;
@@ -456,22 +448,22 @@ void scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  
+
   c->proc = 0;
   for(;;){
     // Desabilita interrupções para evitar condição de corrida
     intr_off();
-    
+
     // Implementação do escalonamento por loteria
     int winning_ticket = random() % TOTAL_TICKETS;
     int current_ticket = 0;
     struct proc *selected = 0;
-    
+
     // Primeira passada: seleciona a classe de prioridade
     for(p = proc; p < &proc[NPROC]; p++) {
       if(p->state != RUNNABLE)
         continue;
-        
+
       if(current_ticket <= winning_ticket && winning_ticket < current_ticket + p->tickets) {
         selected = p;
         break;
@@ -501,7 +493,6 @@ void scheduler(void)
     intr_on();
   }
 }
-
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
