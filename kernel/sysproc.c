@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "syscall.h"
 
+extern uint64 sys_exit(void);
+
 uint64
 sys_exit(void)
 {

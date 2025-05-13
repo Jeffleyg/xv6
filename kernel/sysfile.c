@@ -17,7 +17,6 @@
 #include "fcntl.h"
 // #include "syscall.h"
 
-extern void sys_exit(void);
 
 
 // Fetch the nth word-sized system call argument as a file descriptor

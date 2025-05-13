@@ -531,7 +531,7 @@ yield(void)
   release(&p->lock);
 }
 
-void
+uint64
 sys_exit(void)
 {
   int status;
