@@ -55,11 +55,11 @@ argraw(int n)
 }
 
 // Fetch the nth 32-bit system call argument.
-void
-argint(int n, int *ip)
-{
-  *ip = argraw(n);
-}
+// void
+// argint(int n, int *ip)
+// {
+//   *ip = argraw(n);
+// }
 
 // Retrieve an argument as a pointer.
 // Doesn't check for legality, since
