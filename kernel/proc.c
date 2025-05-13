@@ -285,7 +285,7 @@ growproc(int n)
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int
-fork(int x)
+fork(void)
 {
   int i, pid;
   struct proc *np;
