@@ -12,6 +12,8 @@ struct proc proc[NPROC];
 
 struct proc *initproc;
 
+int argint(int n, int *ip);
+
 int nextpid = 1;
 struct spinlock pid_lock;
 
