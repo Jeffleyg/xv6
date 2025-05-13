@@ -291,12 +291,11 @@ fork(int x)
   struct proc *np;
   struct proc *p = myproc();
 
-  // Allocate process.
-  if((np = allocproc()) == 0){
+  // Aloca o PCB
+  if((np = allocproc()) == 0)
     return -1;
-  }
 
-  // Copy user memory from parent to child.
+  // Copia a memória de usuário
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
@@ -304,13 +303,11 @@ fork(int x)
   }
   np->sz = p->sz;
 
-  // copy saved user registers.
+  // Copia os registradores e configura o retorno para 0 no filho
   *(np->trapframe) = *(p->trapframe);
-
-  // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
-  // increment reference counts on open file descriptors.
+  // Duplicação de arquivos e diretório
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
@@ -320,18 +317,37 @@ fork(int x)
 
   pid = np->pid;
 
+  // ---- NOVO BLOCO: classe e tickets ---------------------------------
+  if(x < 0) x = 0;  // Garantir que o valor de x não seja negativo
+
+  if(x < NCLASSES) {  // 0..3 → classes fixas
+    np->sched_class = x;
+    const int class_tk[4] = {
+      CLS0_TICKETS, CLS1_TICKETS,
+      CLS2_TICKETS, CLS3_TICKETS
+    };
+    np->tickets = class_tk[x];
+  } else {  // x ≥ 4 → escalonamento de loteria “puro”
+    np->sched_class = CLS3;  // Coloca na classe de menor prioridade
+    np->tickets     = x;     // Usa número de tickets fornecido
+  }
+  // -------------------------------------------------------------------
+
   release(&np->lock);
 
+  // Configura o processo filho para esperar no pai
   acquire(&wait_lock);
   np->parent = p;
   release(&wait_lock);
 
+  // Torna o processo filho pronto para execução
   acquire(&np->lock);
   np->state = RUNNABLE;
   release(&np->lock);
 
-  return pid;
+  return pid;  // Retorna o PID do filho para o pai
 }
+
 
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
