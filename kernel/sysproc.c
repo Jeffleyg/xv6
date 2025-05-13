@@ -14,7 +14,27 @@ sys_exit(void)
   exit(n);
   return 0;  // not reached
 }
+uint64
+sys_setpriority(void)
+{
+  int class;
+  if(argint(0, &class) < 0)
+    return -1;
+  if(class < 0 || class >= PRIORITY_CLASSES)
+    return -1;
 
+  struct proc *p = myproc();
+  p->priority_class = class;
+
+  switch(class) {
+    case 0: p->tickets = CLASS0_TICKETS; break;
+    case 1: p->tickets = CLASS1_TICKETS; break;
+    case 2: p->tickets = CLASS2_TICKETS; break;
+    case 3: p->tickets = CLASS3_TICKETS; break;
+  }
+
+  return 0;
+}
 uint64
 sys_getpid(void)
 {
@@ -24,6 +44,9 @@ sys_getpid(void)
 uint64
 sys_fork(void)
 {
+  int x;
+  if(argint(0, &x) < 0)
+    return -1;
   return fork();
 }
 
