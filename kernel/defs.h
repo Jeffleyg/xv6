@@ -9,8 +9,7 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
-void  randinit(uint seed);
-uint  rand(void);
+
 
 // bio.c
 void            binit(void);
