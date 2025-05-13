@@ -64,4 +64,5 @@ int main() {
 
   printf("Teste concluído\n");
   exit(0);
+  return 0;
 }

@@ -44,5 +44,6 @@ main()
 
   srandom(12345);
 
-  scheduler();        
+  scheduler();
+
 }

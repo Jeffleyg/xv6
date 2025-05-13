@@ -531,6 +531,14 @@ yield(void)
   release(&p->lock);
 }
 
+void
+sys_exit(void)
+{
+  int status;
+  argint(0, &status);
+  exit(status);
+}
+
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
 void
