@@ -488,7 +488,7 @@ scheduler(void)
 
     acquire(&ptable->lock);
     struct proc *p;
-    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state == RUNNABLE){
         class_total[p->sched_class] += p->tickets;
         grand_total += p->tickets;
@@ -508,7 +508,7 @@ scheduler(void)
     }
 
     // 2.  Round-robin dentro da classe vencedora ------------
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = ptable->proc; p < &ptable->proc[NPROC]; p++){
       if(p->state == RUNNABLE && p->sched_class == chosen_cls){
         // contexto de troca
         c->proc = p;
