@@ -7,12 +7,7 @@
 #include "syscall.h"
 #include "defs.h"
 
-extern uint64 sys_exit(void);
-
-static uint64 (*syscalls[])(void) =
-{
-  [SYS_exit] sys_exit,
-};
+// extern uint64 sys_exit(void);
 
 // Fetch the uint64 at addr from the current process.
 int
