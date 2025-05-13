@@ -7,6 +7,11 @@
 #include "syscall.h"
 #include "defs.h"
 
+static uint64 (*syscalls[])(void) =
+{
+  [SYS_exit] sys_exit,
+};
+
 // Fetch the uint64 at addr from the current process.
 int
 fetchaddr(uint64 addr, uint64 *ip)

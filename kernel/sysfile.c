@@ -15,14 +15,11 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
-#include "syscall.h"
+// #include "syscall.h"
 
 extern void sys_exit(void);
 
-static uint64 (*syscalls[])(void) =
-{
-  [SYS_exit] sys_exit,
-};
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
