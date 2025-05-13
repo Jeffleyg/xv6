@@ -542,7 +542,7 @@ sys_exit(void)
   }
 
   exit(status);
-  //return 0; // Add return to avoid warning
+  return 0; // Add return to avoid warning
 }
 
 // A fork child's very first scheduling by scheduler()
