@@ -9,14 +9,13 @@
 
 extern uint64 sys_exit(void);
 
-// uint64
-// sys_exit(void)
-// {
-//   int n;
-//   argint(0, &n);
-//   exit(n);
-//   return 0;  // not reached
-// }
+int argint(int n, int *ip){
+  if(n < 0 || n >= MAXARG)
+    return -1;
+
+  *ip = proc->tf->a[n];
+  return 0;
+}
 uint64
 sys_setpriority(void)
 {
